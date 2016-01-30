@@ -1,0 +1,7 @@
+[package]
+name = "irc"
+version = "0.1.0"
+authors = ["Calum Leslie <calumleslie@gmail.com>"]
+
+[dependencies]
+nom = "~1.1.0"
