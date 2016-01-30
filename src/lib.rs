@@ -5,7 +5,6 @@ use std::fmt::Display;
 use std::fmt::Formatter;
 use std::vec::Vec;
 
-// Maybe consider storing the whole line and references?
 #[derive(Debug,Clone)]
 pub struct Message<'a> {
     prefix: Prefix<'a>,
