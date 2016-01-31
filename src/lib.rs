@@ -32,14 +32,14 @@ pub struct HostInfo<'a> {
 }
 
 impl<'a> UserInfo<'a> {
-    pub fn nickname(nickname: &'a str) -> Self {
+    pub fn of_nickname(nickname: &'a str) -> Self {
         UserInfo {
             nickname: nickname,
             host: None,
         }
     }
 
-    pub fn nickname_host(nickname: &'a str, host: &'a str) -> Self {
+    pub fn of_nickname_host(nickname: &'a str, host: &'a str) -> Self {
         UserInfo {
             nickname: nickname,
             host: Some(HostInfo {
@@ -49,7 +49,7 @@ impl<'a> UserInfo<'a> {
         }
     }
 
-    pub fn nickname_user_host(nickname: &'a str, user: &'a str, host: &'a str) -> Self {
+    pub fn of_nickname_user_host(nickname: &'a str, user: &'a str, host: &'a str) -> Self {
         UserInfo {
             nickname: nickname,
             host: Some(HostInfo {
@@ -128,7 +128,7 @@ mod tests {
     #[test]
     fn user_prefix_nickname_only() {
         let line = Message {
-            prefix: Prefix::User(UserInfo::nickname("nickname")),
+            prefix: Prefix::User(UserInfo::of_nickname("nickname")),
             command: "PING",
             arguments: vec![],
         };
@@ -139,7 +139,7 @@ mod tests {
     #[test]
     fn user_prefix_nickname_host() {
         let line = Message {
-            prefix: Prefix::User(UserInfo::nickname_host("nickname", "some.host.name")),
+            prefix: Prefix::User(UserInfo::of_nickname_host("nickname", "some.host.name")),
             command: "PING",
             arguments: vec![],
         };
@@ -150,9 +150,9 @@ mod tests {
     #[test]
     fn user_prefix_all_user_info() {
         let line = Message {
-            prefix: Prefix::User(UserInfo::nickname_user_host("nickname",
-                                                              "realname",
-                                                              "some.host.name")),
+            prefix: Prefix::User(UserInfo::of_nickname_user_host("nickname",
+                                                                 "realname",
+                                                                 "some.host.name")),
             command: "PING",
             arguments: vec![],
         };
