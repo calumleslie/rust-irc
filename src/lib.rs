@@ -1,34 +1,47 @@
 #[macro_use]
 extern crate nom;
 
+pub mod command;
+
+use command::Command;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::vec::Vec;
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone, PartialEq, Eq)]
 pub struct Message<'a> {
     prefix: Prefix<'a>,
-    command: &'a str,
+    command: Command<'a>,
     arguments: Vec<&'a str>,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone, PartialEq, Eq)]
 pub enum Prefix<'a> {
     None,
     Server(&'a str),
     User(UserInfo<'a>),
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone, PartialEq, Eq)]
 pub struct UserInfo<'a> {
     nickname: &'a str,
     host: Option<HostInfo<'a>>,
 }
 
-#[derive(Debug,Clone)]
+#[derive(Debug,Clone, PartialEq, Eq)]
 pub struct HostInfo<'a> {
     user: Option<&'a str>,
     host: &'a str,
+}
+
+impl<'a> Message<'a> {
+    pub fn new(prefix: Prefix<'a>, command: &'a str, arguments: Vec<&'a str>) -> Self {
+        Message {
+            prefix: prefix,
+            command: Command::of_word(command),
+            arguments: arguments,
+        }
+    }
 }
 
 impl<'a> UserInfo<'a> {
@@ -105,11 +118,14 @@ impl<'a> Display for Message<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use command::*;
+
+
     #[test]
     fn command_only() {
         let line = Message {
             prefix: Prefix::None,
-            command: "PING",
+            command: Command::of_word("PING"),
             arguments: vec![],
         };
 
@@ -120,7 +136,7 @@ mod tests {
     fn server_prefix() {
         let line = Message {
             prefix: Prefix::Server("somedude"),
-            command: "PING",
+            command: Command::of_word("PING"),
             arguments: vec![],
         };
 
@@ -131,7 +147,7 @@ mod tests {
     fn user_prefix_nickname_only() {
         let line = Message {
             prefix: Prefix::User(UserInfo::of_nickname("nickname")),
-            command: "PING",
+            command: Command::of_word("PING"),
             arguments: vec![],
         };
 
@@ -142,7 +158,7 @@ mod tests {
     fn user_prefix_nickname_host() {
         let line = Message {
             prefix: Prefix::User(UserInfo::of_nickname_host("nickname", "some.host.name")),
-            command: "PING",
+            command: Command::of_word("PING"),
             arguments: vec![],
         };
 
@@ -155,7 +171,7 @@ mod tests {
             prefix: Prefix::User(UserInfo::of_nickname_user_host("nickname",
                                                                  "realname",
                                                                  "some.host.name")),
-            command: "PING",
+            command: Command::of_word("PING"),
             arguments: vec![],
         };
 
@@ -167,7 +183,7 @@ mod tests {
     fn command_args() {
         let line = Message {
             prefix: Prefix::None,
-            command: "PRIVMSG",
+            command: Command::of_word("PRIVMSG"),
             arguments: vec!["someone", "something"],
         };
 
@@ -178,7 +194,7 @@ mod tests {
     fn command_args_with_long_final_argument() {
         let line = Message {
             prefix: Prefix::None,
-            command: "PRIVMSG",
+            command: Command::of_word("PRIVMSG"),
             arguments: vec!["someone", "Hey I love being on IRC"],
         };
 
@@ -190,7 +206,7 @@ mod tests {
     fn everything() {
         let line = Message {
             prefix: Prefix::Server("information"),
-            command: "PRIVMSG",
+            command: Command::of_word("PRIVMSG"),
             arguments: vec!["someone", "something", "Hey I love being on IRC"],
         };
 
