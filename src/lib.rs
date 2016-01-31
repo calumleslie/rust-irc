@@ -37,10 +37,10 @@ pub struct HostInfo<'a> {
 }
 
 impl<'a> Message<'a> {
-    pub fn new(prefix: Prefix<'a>, command: &'a str, arguments: Vec<&'a str>) -> Self {
+    pub fn full(prefix: Prefix<'a>, command: Command<'a>, arguments: Vec<&'a str>) -> Self {
         Message {
             prefix: prefix,
-            command: Command::of_word(command),
+            command: command,
             arguments: arguments,
         }
     }
@@ -77,17 +77,14 @@ impl<'a> UserInfo<'a> {
 
 impl<'a> Display for UserInfo<'a> {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
-        try!(write!(fmt, "{}", self.nickname));
-
         match self.host {
-            None => Ok(()),
-            Some(ref host_info) => {
-                match host_info.user {
-                    Some(user) => write!(fmt, "!{}@{}", user, host_info.host),
-                    None => write!(fmt, "@{}", host_info.host),
-                }
-            }
-        }
+            None => 
+            	write!(fmt, "{}", self.nickname),
+            Some(HostInfo { user: None, ref host } ) => 
+            	write!(fmt, "{}@{}", self.nickname, host),
+            Some(HostInfo { user: Some( ref user ), ref host } ) =>
+            	write!(fmt, "{}!{}@{}", self.nickname, user, host),
+       }
     }
 }
 
