@@ -149,10 +149,11 @@ mod tests {
         let line = Message {
             prefix: Prefix::Server("some.server.here"),
             command: responses::RPL_WELCOME,
-            arguments: vec![ "Welcome to the server!" ],
+            arguments: vec!["Welcome to the server!"],
         };
 
-        assert_eq!(format!("{}", line), ":some.server.here 001 :Welcome to the server!");
+        assert_eq!(format!("{}", line),
+                   ":some.server.here 001 :Welcome to the server!");
     }
 
     #[test]
