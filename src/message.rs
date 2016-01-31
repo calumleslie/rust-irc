@@ -28,16 +28,13 @@ pub enum Prefix<'a> {
 /// Contains a nickname (`nickname`), and (optionally) information about the
 /// host and username of the user (`host`)
 #[derive(Debug,Clone, PartialEq, Eq)]
-pub struct UserInfo<'a> {
-    nickname: &'a str,
-    host: Option<HostInfo<'a>>,
-}
-
-/// Information about the host and username of a user.
-#[derive(Debug,Clone, PartialEq, Eq)]
-pub struct HostInfo<'a> {
-    user: Option<&'a str>,
-    host: &'a str,
+pub enum UserInfo<'a> {
+    /// Nickname-only, as in prefix `:nickname`
+    Nick(&'a str),
+    /// Nickname and host, as in prefix `:nickname@host`
+    NickHost(&'a str, &'a str),
+    /// Nickname, username, and host, as in prefix `:nickname!username@host`
+    NickUserHost(&'a str, &'a str, &'a str),
 }
 
 impl<'a> Message<'a> {
@@ -53,46 +50,53 @@ impl<'a> Message<'a> {
 
 impl<'a> UserInfo<'a> {
     pub fn of_nickname(nickname: &'a str) -> Self {
-        UserInfo {
-            nickname: nickname,
-            host: None,
-        }
+        UserInfo::Nick(nickname)
     }
 
     pub fn of_nickname_host(nickname: &'a str, host: &'a str) -> Self {
-        UserInfo {
-            nickname: nickname,
-            host: Some(HostInfo {
-                host: host,
-                user: None,
-            }),
-        }
+        UserInfo::NickHost(nickname, host)
     }
 
     pub fn of_nickname_user_host(nickname: &'a str, user: &'a str, host: &'a str) -> Self {
-        UserInfo {
-            nickname: nickname,
-            host: Some(HostInfo {
-                host: host,
-                user: Some(user),
-            }),
-        }
+        UserInfo::NickUserHost(nickname, user, host)
     }
 
     /// Convenience method to get a Prefix::User instance from this UserInfo.
     pub fn to_prefix(self) -> Prefix<'a> {
         Prefix::User(self)
     }
+
+    pub fn nickname(&self) -> &'a str {
+        match *self {
+            UserInfo::Nick(nick) => nick,
+            UserInfo::NickHost(nick, _) => nick,
+            UserInfo::NickUserHost(nick, _, _) => nick,
+        }
+    }
+
+    pub fn host(&self) -> Option<&'a str> {
+        match *self {
+            UserInfo::Nick(_) => None,
+            UserInfo::NickHost(_, host) => Some(host),
+            UserInfo::NickUserHost(_, _, host) => Some(host),
+        }
+    }
+
+    pub fn username(&self) -> Option<&'a str> {
+        match *self {
+            UserInfo::Nick(_) => None,
+            UserInfo::NickHost(_, _) => None,
+            UserInfo::NickUserHost(_, user, _) => Some(user),
+        }
+    }
 }
 
 impl<'a> Display for UserInfo<'a> {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
-        match self.host {
-            None => write!(fmt, "{}", self.nickname),
-            Some(HostInfo { user: None, ref host }) => write!(fmt, "{}@{}", self.nickname, host),
-            Some(HostInfo { user: Some( ref user ), ref host }) => {
-                write!(fmt, "{}!{}@{}", self.nickname, user, host)
-            }
+        match *self {
+            UserInfo::Nick(nick) => write!(fmt, "{}", nick),
+            UserInfo::NickHost(nick, host) => write!(fmt, "{}@{}", nick, host),
+            UserInfo::NickUserHost(nick, user, host) => write!(fmt, "{}!{}@{}", nick, user, host),
         }
     }
 }

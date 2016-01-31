@@ -10,4 +10,3 @@ pub use command::commands;
 pub use message::Message;
 pub use message::Prefix;
 pub use message::UserInfo;
-pub use message::HostInfo;
