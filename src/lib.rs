@@ -144,6 +144,17 @@ mod tests {
     }
 
     #[test]
+    fn response() {
+        let line = Message {
+            prefix: Prefix::Server("some.server.here"),
+            command: responses::RPL_WELCOME,
+            arguments: vec![ "Welcome to the server!" ],
+        };
+
+        assert_eq!(format!("{}", line), ":some.server.here 001 :Welcome to the server!");
+    }
+
+    #[test]
     fn user_prefix_nickname_only() {
         let line = Message {
             prefix: Prefix::User(UserInfo::of_nickname("nickname")),
@@ -183,7 +194,7 @@ mod tests {
     fn command_args() {
         let line = Message {
             prefix: Prefix::None,
-            command: Command::of_word("PRIVMSG"),
+            command: commands::PRIVMSG,
             arguments: vec!["someone", "something"],
         };
 
