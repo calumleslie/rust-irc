@@ -126,7 +126,7 @@ mod tests {
     fn command_only() {
         let line = Message {
             prefix: Prefix::None,
-            command: Command::of_word("PING"),
+            command: commands::PING,
             arguments: vec![],
         };
 
@@ -137,7 +137,7 @@ mod tests {
     fn server_prefix() {
         let line = Message {
             prefix: Prefix::Server("somedude"),
-            command: Command::of_word("PING"),
+            command: commands::PING,
             arguments: vec![],
         };
 
@@ -160,7 +160,7 @@ mod tests {
     fn user_prefix_nickname_only() {
         let line = Message {
             prefix: Prefix::User(UserInfo::of_nickname("nickname")),
-            command: Command::of_word("PING"),
+            command: commands::PING,
             arguments: vec![],
         };
 
@@ -171,7 +171,7 @@ mod tests {
     fn user_prefix_nickname_host() {
         let line = Message {
             prefix: Prefix::User(UserInfo::of_nickname_host("nickname", "some.host.name")),
-            command: Command::of_word("PING"),
+            command: commands::PING,
             arguments: vec![],
         };
 
@@ -184,7 +184,7 @@ mod tests {
             prefix: Prefix::User(UserInfo::of_nickname_user_host("nickname",
                                                                  "realname",
                                                                  "some.host.name")),
-            command: Command::of_word("PING"),
+            command: commands::PING,
             arguments: vec![],
         };
 
@@ -207,7 +207,7 @@ mod tests {
     fn command_args_with_long_final_argument() {
         let line = Message {
             prefix: Prefix::None,
-            command: Command::of_word("PRIVMSG"),
+            command: commands::PRIVMSG,
             arguments: vec!["someone", "Hey I love being on IRC"],
         };
 
@@ -219,7 +219,7 @@ mod tests {
     fn everything() {
         let line = Message {
             prefix: Prefix::Server("information"),
-            command: Command::of_word("PRIVMSG"),
+            command: commands::PRIVMSG,
             arguments: vec!["someone", "something", "Hey I love being on IRC"],
         };
 
