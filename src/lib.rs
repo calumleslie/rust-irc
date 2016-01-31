@@ -76,6 +76,8 @@ impl<'a> Display for UserInfo<'a> {
     }
 }
 
+// Is using "Display" to format these for the wire a misuse?
+// Should we be using a Write or soemthing instead?
 impl<'a> Display for Message<'a> {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         try!(match self.prefix {
