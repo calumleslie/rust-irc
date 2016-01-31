@@ -1,9 +1,11 @@
 #[macro_use]
 extern crate nom;
 
-pub mod command;
+mod command;
 
-use command::Command;
+pub use command::Command;
+pub use command::responses;
+pub use command::commands;
 use std::fmt::Display;
 use std::fmt::Formatter;
 use std::vec::Vec;
@@ -118,7 +120,6 @@ impl<'a> Display for Message<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use command::*;
 
 
     #[test]
