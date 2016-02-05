@@ -3,6 +3,7 @@ extern crate nom;
 
 mod command;
 mod message;
+mod parser;
 
 pub use command::Command;
 pub use command::responses;
