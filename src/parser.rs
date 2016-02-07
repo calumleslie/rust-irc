@@ -52,8 +52,8 @@ named!(prefix<Prefix>, preceded!( tag!( ":" ), alt!(
   complete!( terminated!( user_prefix, tag!( " " ) ) )
 | complete!( terminated!( server_prefix, tag!( " " ) ) ) ) ) );
 
-named!(user_prefix<Prefix>, map!(user_info, make_user_prefix ) );
-named!(server_prefix<Prefix>, dbg!( map!( host, make_server_prefix ) ) );
+named!(user_prefix<Prefix>, map!(user_info, Prefix::User ) );
+named!(server_prefix<Prefix>, dbg!( map!( host, Prefix::Server ) ) );
 
 // Use of complete! here stops the earlier patterns returning Incomplete.
 named!(user_info<UserInfo>, alt!(
@@ -98,14 +98,6 @@ fn make_word<'a>(input: &'a [u8]) -> Result<Command<'a>, str::Utf8Error> {
 
 fn make_number<'a>(input: &'a [u8]) -> Result<Command<'a>, str::Utf8Error> {
     str::from_utf8(input).map(|text| u16::from_str(text).unwrap_or(123)).map(|n| Command::Number(n))
-}
-
-fn make_user_prefix<'a>(user_info: UserInfo<'a>) -> Prefix<'a> {
-    Prefix::User(user_info)
-}
-
-fn make_server_prefix<'a>(input: &'a str) -> Prefix<'a> {
-    Prefix::Server(input)
 }
 
 fn is_nickname_char(c: u8) -> bool {
