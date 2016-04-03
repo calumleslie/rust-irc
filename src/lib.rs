@@ -1,9 +1,15 @@
 #[macro_use]
+extern crate log;
+
+#[macro_use]
 extern crate nom;
 
+mod client;
 mod command;
 mod message;
 mod parser;
+
+pub use client::connect;
 
 pub use command::Command;
 pub use command::responses;
