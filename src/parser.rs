@@ -34,10 +34,10 @@ named!(message<Message>, chain!(
   tag!("\r\n"), ||{
     Message::new( prefix.unwrap_or( Prefix::None ), command, params )
   }
-));
+)) ;
 
-named!(params<Vec<&str> >, many0!( preceded!( tag!(" "), alt!( param | final_param ) ) ) );
-named!(param<&str>, map_res!( take_while1!(nospcrlfcl), str::from_utf8 ) );
+named!(params<Vec<&str> >, many0!( preceded!( tag!(" "), alt!( final_param | param ) ) ) );
+named!(param<&str>, map_res!( take_while1!(not_space), str::from_utf8 ) );
 named!(final_param<&str>, preceded!( tag!(":"), trailing ) );
 named!(trailing<&str>, map_res!( take_while!(trailing_char), str::from_utf8 ) );
 
@@ -77,9 +77,9 @@ fn is_host_char(c: u8) -> bool {
     is_alphabetic(c) || is_digit(c) || c == b'.' || c == b':'
 }
 
-// Everything except NUL, CR, LF, " " and ":"
-fn nospcrlfcl(c: u8) -> bool {
-    (c != 0) && (c != b'\r') && (c != b'\n') && (c != b' ') && (c != b':')
+// Everything except NUL, CR, LF, and " "
+fn not_space(c: u8) -> bool {
+    (c != 0) && (c != b'\r') && (c != b'\n') && (c != b' ')
 }
 
 // "[", "]", "\", "`", "_", "^", "{", "|", "}"
@@ -89,7 +89,7 @@ fn is_special(c: u8) -> bool {
 }
 
 fn trailing_char(c: u8) -> bool {
-    (c == b' ') || (c == b':') || nospcrlfcl(c)
+    (c == b' ') || not_space(c)
 }
 
 fn make_word<'a>(input: &'a [u8]) -> Result<Command<'a>, str::Utf8Error> {
@@ -247,6 +247,36 @@ fn prefix_user_prefix_full() {
 fn prefix_user_prefix_nickname_only() {
     match prefix(":aperson ".as_bytes()) {
         IResult::Done(_, out) => assert_eq!(out, Prefix::User(UserInfo::of_nickname("aperson"))),
+        other => panic!("{:?}", other),
+    }
+}
+
+#[test]
+fn real_message_complex() {
+    match message(":leguin.freenode.net 005 zootmbot CHANTYPES=# EXCEPTS INVEX \
+                   CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ \
+                   MAXLIST=bqeI:100 MODES=4 NETWORK=freenode KNOCK STATUSMSG=@+ CALLERID=g :are \
+                   supported by this server\r\n"
+                      .as_bytes()) {
+        IResult::Done(_, out) => {
+            assert_eq!(out,
+                       Message::new(Prefix::Server("leguin.freenode.net"),
+                                    responses::RPL_BOUNCE,
+                                    vec!["zootmbot",
+                                         "CHANTYPES=#",
+                                         "EXCEPTS",
+                                         "INVEX",
+                                         "CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz",
+                                         "CHANLIMIT=#:120",
+                                         "PREFIX=(ov)@+",
+                                         "MAXLIST=bqeI:100",
+                                         "MODES=4",
+                                         "NETWORK=freenode",
+                                         "KNOCK",
+                                         "STATUSMSG=@+",
+                                         "CALLERID=g",
+                                         "are supported by this server"]))
+        }
         other => panic!("{:?}", other),
     }
 }
