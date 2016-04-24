@@ -7,12 +7,12 @@ use std;
 /// Note that creating one of these directly will
 /// bypass validation and cause you to have a Bad Time.
 #[derive(Debug,Clone, PartialEq, Eq)]
-pub enum Command<'a> {
-    Word(&'a str),
+pub enum Command {
+    Word(String),
     Number(u16),
 }
 
-impl<'a> Command<'a> {
+impl Command {
     /// Creates a Command::Word validated to ensure it is a valid IRC command.
     /// Only validates that the command is made up of valid characters, not that
     /// it's a command that appears in any RFC.
@@ -20,7 +20,7 @@ impl<'a> Command<'a> {
     /// # Panics
     ///
     /// Will panic if `word` has any characters outside of `[a-zA-Z]`.
-    pub fn of_word(word: &'a str) -> Self {
+    pub fn of_word(word: &str) -> Self {
         for (i, c) in word.chars().enumerate() {
             // As deep as my hatred for regexes goes this is getting a bit silly
             let codepoint = c as u32;
@@ -33,7 +33,7 @@ impl<'a> Command<'a> {
                     c);
         }
 
-        Command::Word(word)
+        Command::Word(word.into())
     }
 
     /// Creates a Command::Number validated to ensure it is a valid IRC command.
@@ -53,13 +53,16 @@ impl<'a> Command<'a> {
 }
 
 /// Constants for the command types documented in RFC 8212
+#[allow(non_snake_case)]
 pub mod commands {
     use super::Command;
 
     macro_rules! commands {
         ( $( $x:ident ),* ) => {
             $(
-                pub const $x: Command<'static> = Command::Word(stringify!($x));
+                pub fn $x() -> Command {
+                    Command::of_word(stringify!($x))
+                }
             )*
         };
     }
@@ -78,12 +81,15 @@ pub mod commands {
 }
 
 /// Constants for all of the response types documented in RFC 8212
+#[allow(non_snake_case)]
 pub mod responses {
     use super::Command;
 
     macro_rules! response {
         ( $number:expr , $name:ident ) => {
-            pub const $name: Command<'static> = Command::Number($number);
+            pub fn $name() -> Command {
+                Command::Number($number)
+            }
         };
     }
 
@@ -228,10 +234,10 @@ pub mod responses {
     response!( 502, ERR_USERSDONTMATCH );
 }
 
-impl<'a> Display for Command<'a> {
+impl Display for Command {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         match *self {
-            Command::Word(word) => write!(fmt, "{}", word),
+            Command::Word(ref word) => write!(fmt, "{}", word),
             Command::Number(number) => write!(fmt, "{:0>3}", number),
         }
     }
@@ -271,6 +277,16 @@ mod tests {
     #[test]
     fn fmt_number_padded() {
         assert_eq!(format!("{}", Command::of_number(1)), "001");
+    }
+
+    #[test]
+    fn commands() {
+        assert_eq!(commands::PRIVMSG(), Command::of_word("PRIVMSG"));
+    }
+
+    #[test]
+    fn replies() {
+        assert_eq!(responses::RPL_BOUNCE(), Command::of_number(5));
     }
 
 }

@@ -27,18 +27,18 @@ pub fn connect<A: ToSocketAddrs + Display>(server: A) -> io::Result<()> {
         thread::sleep(Duration::from_secs(5));
 
         write_message(&mut writer,
-                      &Message::new(Prefix::None, commands::NICK, vec!["zootmbot"]));
+                      &Message::new(Prefix::None, commands::NICK(), vec!["zootmbot".into()]));
         writer.flush();
         write_message(&mut writer,
                       &Message::new(Prefix::None,
-                                    commands::USER,
-                                    vec!["zootmbot",
-                                         "0",
-                                         "*",
-                                         "This is pretty sweet assuming it works"]));
+                                    commands::USER(),
+                                    vec!["zootmbot".into(),
+                                         "0".into(),
+                                         "*".into(),
+                                         "This is pretty sweet assuming it works".into()]));
         writer.flush();
         write_message(&mut writer,
-                      &Message::new(Prefix::None, commands::JOIN, vec!["#superhugs"]));
+                      &Message::new(Prefix::None, commands::JOIN(), vec!["#superhugs".into()]));
         writer.flush();
 
         // info!( "Bailing writer thread" );

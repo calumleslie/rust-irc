@@ -1,109 +1,121 @@
 
 use command::Command;
 use std;
+use std::borrow::Borrow;
+use std::borrow::Cow;
+use std::convert::Into;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::iter::Iterator;
 use std::vec::Vec;
 
 /// A single IRC message, as sent to and from server and client.
 #[derive(Debug,Clone, PartialEq, Eq)]
-pub struct Message<'a> {
-    prefix: Prefix<'a>,
-    command: Command<'a>,
-    arguments: Vec<&'a str>,
+pub struct Message {
+    prefix: Prefix,
+    command: Command,
+    arguments: Vec<String>,
 }
 
 /// The prefix of an IRC message.
 #[derive(Debug,Clone, PartialEq, Eq)]
-pub enum Prefix<'a> {
+pub enum Prefix {
     /// The message has no prefix.
     None,
     /// The prefix is a server hostname.
-    Server(&'a str),
+    Server(String),
     /// The prefix is information about a user.
-    User(UserInfo<'a>),
+    User(UserInfo),
 }
 
 /// Information about a user, as provided in the prefix of an IRC message.
 /// Contains a nickname (`nickname`), and (optionally) information about the
 /// host and username of the user (`host`)
 #[derive(Debug,Clone, PartialEq, Eq)]
-pub enum UserInfo<'a> {
+pub enum UserInfo {
     /// Nickname-only, as in prefix `:nickname`
-    Nick(&'a str),
+    Nick(String),
     /// Nickname and host, as in prefix `:nickname@host`
-    NickHost(&'a str, &'a str),
+    NickHost(String, String),
     /// Nickname, username, and host, as in prefix `:nickname!username@host`
-    NickUserHost(&'a str, &'a str, &'a str),
+    NickUserHost(String, String, String),
 }
 
-impl<'a> Message<'a> {
+impl Message {
     /// Creates a new Message instance.
-    pub fn new(prefix: Prefix<'a>, command: Command<'a>, arguments: Vec<&'a str>) -> Self {
+    pub fn new(prefix: Prefix, command: Command, arguments: Vec<String>) -> Self {
         Message {
             prefix: prefix,
             command: command,
             arguments: arguments,
         }
     }
+
+    pub fn from_strs(prefix: Prefix, command: Command, arguments: Vec<&str>) -> Self {
+        let cows: Vec<String> = arguments.iter().map(|arg| arg.to_string()).collect();
+
+        Self::new(prefix, command, cows)
+    }
 }
 
-impl<'a> UserInfo<'a> {
-    pub fn of_nickname(nickname: &'a str) -> Self {
-        UserInfo::Nick(nickname)
+impl UserInfo {
+    pub fn of_nickname(nickname: &str) -> Self {
+        UserInfo::Nick(nickname.into())
     }
 
-    pub fn of_nickname_host(nickname: &'a str, host: &'a str) -> Self {
-        UserInfo::NickHost(nickname, host)
+    pub fn of_nickname_host(nickname: &str, host: &str) -> Self {
+        UserInfo::NickHost(nickname.into(), host.into())
     }
 
-    pub fn of_nickname_user_host(nickname: &'a str, user: &'a str, host: &'a str) -> Self {
-        UserInfo::NickUserHost(nickname, user, host)
+    pub fn of_nickname_user_host(nickname: &str, user: &str, host: &str) -> Self {
+        UserInfo::NickUserHost(nickname.into(), user.into(), host.into())
     }
 
     /// Convenience method to get a Prefix::User instance from this UserInfo.
-    pub fn to_prefix(self) -> Prefix<'a> {
+    pub fn to_prefix<'a>(self) -> Prefix {
         Prefix::User(self)
     }
 
-    pub fn nickname(&self) -> &'a str {
+    pub fn nickname(&self) -> &str {
         match *self {
-            UserInfo::Nick(nick) => nick,
-            UserInfo::NickHost(nick, _) => nick,
-            UserInfo::NickUserHost(nick, _, _) => nick,
+            UserInfo::Nick(ref nick) => nick,
+            UserInfo::NickHost(ref nick, _) => nick,
+            UserInfo::NickUserHost(ref nick, _, _) => nick,
         }
     }
 
-    pub fn host(&self) -> Option<&'a str> {
+    pub fn host(&self) -> Option<&str> {
         match *self {
             UserInfo::Nick(_) => None,
-            UserInfo::NickHost(_, host) => Some(host),
-            UserInfo::NickUserHost(_, _, host) => Some(host),
+            UserInfo::NickHost(_, ref host) => Some(host),
+            UserInfo::NickUserHost(_, _, ref host) => Some(host),
         }
     }
 
-    pub fn username(&self) -> Option<&'a str> {
+    pub fn username(&self) -> Option<&str> {
         match *self {
             UserInfo::Nick(_) => None,
             UserInfo::NickHost(_, _) => None,
-            UserInfo::NickUserHost(_, user, _) => Some(user),
+            UserInfo::NickUserHost(_, ref user, _) => Some(user),
         }
     }
 }
 
-impl<'a> Display for UserInfo<'a> {
+impl Display for UserInfo {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         match *self {
-            UserInfo::Nick(nick) => write!(fmt, "{}", nick),
-            UserInfo::NickHost(nick, host) => write!(fmt, "{}@{}", nick, host),
-            UserInfo::NickUserHost(nick, user, host) => write!(fmt, "{}!{}@{}", nick, user, host),
+            UserInfo::Nick(ref nick) => write!(fmt, "{}", nick),
+            UserInfo::NickHost(ref nick, ref host) => write!(fmt, "{}@{}", nick, host),
+            UserInfo::NickUserHost(ref nick, ref user, ref host) => {
+                write!(fmt, "{}!{}@{}", nick, user, host)
+            }
         }
     }
 }
 
 // Is using "Display" to format these for the wire a misuse?
 // Should we be using a Write or soemthing instead?
-impl<'a> Display for Message<'a> {
+impl Display for Message {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         try!(match self.prefix {
             Prefix::None => Ok(()),
@@ -135,23 +147,23 @@ mod tests {
 
     #[test]
     fn command_only() {
-        let line = Message::new(Prefix::None, PING, vec![]);
+        let line = Message::new(Prefix::None, PING(), vec![]);
 
         assert_eq!(format!("{}", line), "PING");
     }
 
     #[test]
     fn server_prefix() {
-        let line = Message::new(Prefix::Server("somedude"), PING, vec![]);
+        let line = Message::new(Prefix::Server("somedude".into()), PING(), vec![]);
 
         assert_eq!(format!("{}", line), ":somedude PING");
     }
 
     #[test]
     fn response() {
-        let line = Message::new(Prefix::Server("some.server.here"),
-                                RPL_WELCOME,
-                                vec!["Welcome to the server!"]);
+        let line = Message::from_strs(Prefix::Server("some.server.here".into()),
+                                      RPL_WELCOME(),
+                                      vec!["Welcome to the server!"]);
 
         assert_eq!(format!("{}", line),
                    ":some.server.here 001 :Welcome to the server!");
@@ -159,23 +171,27 @@ mod tests {
 
     #[test]
     fn user_prefix_nickname_only() {
-        let line = Message::new(UserInfo::of_nickname("nickname").to_prefix(), PING, vec![]);
+        let line = Message::from_strs(UserInfo::of_nickname("nickname".into()).to_prefix(),
+                                      PING(),
+                                      vec![]);
 
         assert_eq!(format!("{}", line), ":nickname PING");
     }
 
     #[test]
     fn user_prefix_nickname_host() {
-        let user_info = UserInfo::of_nickname_host("nickname", "some.host.name");
-        let line = Message::new(user_info.to_prefix(), PING, vec![]);
+        let user_info = UserInfo::of_nickname_host("nickname".into(), "some.host.name".into());
+        let line = Message::new(user_info.to_prefix(), PING(), vec![]);
 
         assert_eq!(format!("{}", line), ":nickname@some.host.name PING");
     }
 
     #[test]
     fn user_prefix_all_user_info() {
-        let user_info = UserInfo::of_nickname_user_host("nickname", "realname", "some.host.name");
-        let line = Message::new(user_info.to_prefix(), PING, vec![]);
+        let user_info = UserInfo::of_nickname_user_host("nickname".into(),
+                                                        "realname".into(),
+                                                        "some.host.name".into());
+        let line = Message::new(user_info.to_prefix(), PING(), vec![]);
 
         assert_eq!(format!("{}", line),
                    ":nickname!realname@some.host.name PING");
@@ -183,16 +199,16 @@ mod tests {
 
     #[test]
     fn command_args() {
-        let line = Message::new(Prefix::None, PRIVMSG, vec!["someone", "something"]);
+        let line = Message::from_strs(Prefix::None, PRIVMSG(), vec!["someone", "something"]);
 
         assert_eq!(format!("{}", line), "PRIVMSG someone something");
     }
 
     #[test]
     fn command_args_with_long_final_argument() {
-        let line = Message::new(Prefix::None,
-                                PRIVMSG,
-                                vec!["someone", "Hey I love being on IRC"]);
+        let line = Message::from_strs(Prefix::None,
+                                      PRIVMSG(),
+                                      vec!["someone", "Hey I love being on IRC"]);
 
         assert_eq!(format!("{}", line),
                    "PRIVMSG someone :Hey I love being on IRC");
@@ -200,9 +216,9 @@ mod tests {
 
     #[test]
     fn everything() {
-        let line = Message::new(Prefix::Server("information"),
-                                PRIVMSG,
-                                vec!["someone", "something", "Hey I love being on IRC"]);
+        let line = Message::from_strs(Prefix::Server("information".into()),
+                                      PRIVMSG(),
+                                      vec!["someone", "something", "Hey I love being on IRC"]);
 
         assert_eq!(format!("{}", line),
                    ":information PRIVMSG someone something :Hey I love being on IRC");
