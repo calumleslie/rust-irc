@@ -6,6 +6,7 @@ use std::io::BufRead;
 use std::io::Write;
 use std::io;
 use std::str;
+use std::time::Duration;
 use std::thread;
 use log::LogLevel::Warn;
 use command::Command;
@@ -17,13 +18,13 @@ use message::UserInfo;
 pub fn connect<A: ToSocketAddrs + Display>(server: A) -> io::Result<()> {
     info!("Connecting to server at {}", server);
 
-    let mut read_side = try!(TcpStream::connect(server));
-    let mut write_side = try!(read_side.try_clone());
+    let read_side = try!(TcpStream::connect(server));
+    let write_side = try!(read_side.try_clone());
 
     thread::spawn(move || {
         let mut writer = write_side;
 
-        thread::sleep_ms(5000);
+        thread::sleep(Duration::from_secs(5));
 
         write_message(&mut writer,
                       &Message::new(Prefix::None, commands::NICK, vec!["zootmbot"]));
