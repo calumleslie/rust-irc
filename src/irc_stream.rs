@@ -64,7 +64,7 @@ impl<R> IrcReader<R> where R: BufRead
         match Message::parse(&buf[..]) {
             Ok((msg, remaining)) => {
                 assert!(remaining.len() == 0);
-                debug!( "RECV> {}", msg );
+                debug!("RECV> {}", msg);
                 Ok(msg)
             }
             Err(parse_error) => Err(Error::new(ErrorKind::InvalidData, parse_error)),
