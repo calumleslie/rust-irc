@@ -7,6 +7,7 @@ use std::io::BufReader;
 use std::io::Error;
 use std::io::ErrorKind;
 use std::io::Read;
+use std::io::Write;
 
 use message::Message;
 
@@ -17,6 +18,7 @@ pub struct IrcStream {
 }
 
 /// A reader of IRC messages from a buffered reader
+#[derive(Debug)]
 pub struct IrcReader<R> {
     reader: R,
 }
@@ -44,6 +46,12 @@ impl IrcStream {
         let read_stream = try!(self.tcp_stream.try_clone());
         Ok(IrcReader { reader: BufReader::new(read_stream) })
     }
+
+    pub fn send(&mut self, message: &Message) -> io::Result<()> {
+        debug!("SEND> {}", message);
+        try!(write!(self.tcp_stream, "{}\r\n", message));
+        self.tcp_stream.flush()
+    }
 }
 
 impl<R> IrcReader<R> where R: BufRead
@@ -56,6 +64,7 @@ impl<R> IrcReader<R> where R: BufRead
         match Message::parse(&buf[..]) {
             Ok((msg, remaining)) => {
                 assert!(remaining.len() == 0);
+                debug!( "RECV> {}", msg );
                 Ok(msg)
             }
             Err(parse_error) => Err(Error::new(ErrorKind::InvalidData, parse_error)),
