@@ -12,9 +12,9 @@ use std::vec::Vec;
 /// A single IRC message, as sent to and from server and client.
 #[derive(Debug,Clone, PartialEq, Eq)]
 pub struct Message {
-    prefix: Prefix,
-    command: Command,
-    arguments: Vec<String>,
+    pub prefix: Prefix,
+    pub command: Command,
+    pub arguments: Vec<String>,
 }
 
 /// The prefix of an IRC message.

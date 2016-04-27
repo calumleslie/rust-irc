@@ -6,6 +6,7 @@ extern crate nom;
 
 mod client;
 mod command;
+mod irc_stream;
 mod message;
 mod parser;
 
@@ -17,11 +18,14 @@ pub use command::commands;
 pub use message::Message;
 pub use message::Prefix;
 pub use message::UserInfo;
+pub use irc_stream::IrcStream;
+pub use irc_stream::IrcReader;
+pub use parser::ParseError;
 
 use parser::parse_message;
 
 impl Message {
-    pub fn parse(input: &[u8]) -> Result<(Message, &[u8]), ()> {
+    pub fn parse(input: &[u8]) -> Result<(Message, &[u8]), ParseError> {
         parse_message(input)
     }
 }

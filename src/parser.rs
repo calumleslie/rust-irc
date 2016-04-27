@@ -1,4 +1,8 @@
+use std;
 use std::borrow::Cow;
+use std::error::Error;
+use std::fmt::Display;
+use std::fmt::Formatter;
 use std::str;
 use std::str::FromStr;
 use std::str::Utf8Error;
@@ -20,10 +24,35 @@ use command::commands;
 #[cfg(test)]
 use command::responses;
 
-pub fn parse_message(input: &[u8]) -> Result<(Message, &[u8]), ()> {
+#[derive(Debug)]
+pub struct ParseError {
+    input: Vec<u8>,
+}
+
+impl Error for ParseError {
+    fn description(&self) -> &str {
+        "failed to parse IRC message from line"
+    }
+}
+
+impl Display for ParseError {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        let as_text = str::from_utf8(&self.input);
+
+        if as_text.is_ok() {
+            write!(fmt, "Failed to parse line: [{}]", as_text.unwrap())
+        } else {
+            write!(fmt,
+                   "Failed to parse line and could not interpret as UTF-8, raw bytes: [{:?}]",
+                   self.input)
+        }
+    }
+}
+
+pub fn parse_message(input: &[u8]) -> Result<(Message, &[u8]), ParseError> {
     match message(input) {
         IResult::Done(remaining, message) => return Ok((message, remaining)),
-        _ => return Err(()),
+        _ => return Err(ParseError { input: input.to_vec() }),
     }
 }
 
