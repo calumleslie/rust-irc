@@ -1,8 +1,6 @@
 
 use command::Command;
 use std;
-use std::borrow::Borrow;
-use std::borrow::Cow;
 use std::convert::Into;
 use std::fmt::Display;
 use std::fmt::Formatter;
