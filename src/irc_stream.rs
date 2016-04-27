@@ -16,19 +16,28 @@ pub struct IrcStream {
     tcp_stream: TcpStream,
 }
 
-/// A reader of IRC messages from a buffered reader
+/// A reader of IRC messages.
+///
+/// Generally R should implement BufRead. Because this type implments `Iterator` the messages in
+/// the stream can be iterated, however errors will be skipped, and the iteration will stop on the
+/// first error (which may not be fatal).
 #[derive(Debug)]
 pub struct IrcReader<R> {
     reader: R,
 }
 
 impl IrcStream {
+    /// Connects to an IRC server as a client at address `server`.
+    ///
+    /// The server argument must implement `Display` since it is logged using the default format,
+    /// it's not clear if this is overly limiting.
     pub fn connect<A: ToSocketAddrs + Display>(server: A) -> io::Result<Self> {
         info!("Connecting to server at {}", server);
 
         Ok(IrcStream { tcp_stream: try!(TcpStream::connect(server)) })
     }
 
+    /// Create a new IrcStream wrapping a provided TcpStream.
     pub fn new(tcp_stream: TcpStream) -> Self {
         IrcStream { tcp_stream: tcp_stream }
     }
@@ -46,6 +55,7 @@ impl IrcStream {
         Ok(IrcReader { reader: BufReader::new(read_stream) })
     }
 
+    /// Sends a message to the target of the stream.
     pub fn send(&mut self, message: &Message) -> io::Result<()> {
         debug!("SEND> {}", message);
         try!(write!(self.tcp_stream, "{}\r\n", message));
@@ -55,6 +65,7 @@ impl IrcStream {
 
 impl<R> IrcReader<R> where R: BufRead
 {
+    /// Read the next message from this reader.
     pub fn next_message(&mut self) -> io::Result<Message> {
         // TODO: Is the buffer being in here really good? Moving it out leads to all manner of
         // annoying borrow errors.
