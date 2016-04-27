@@ -6,7 +6,6 @@ use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Error;
 use std::io::ErrorKind;
-use std::io::Read;
 use std::io::Write;
 
 use message::Message;
@@ -92,7 +91,7 @@ mod tests {
 
     #[test]
     fn reader_read() {
-        let mut input = b"PING 123\r\nPING 456\r\nPING 789\r\n".to_vec();
+        let input = b"PING 123\r\nPING 456\r\nPING 789\r\n".to_vec();
 
         let mut reader = IrcReader { reader: BufReader::new(Cursor::new(input)) };
 
@@ -108,9 +107,9 @@ mod tests {
 
     #[test]
     fn reader_as_iterator() {
-        let mut input = b"PING 123\r\nPING 456\r\nPING 789\r\n".to_vec();
+        let input = b"PING 123\r\nPING 456\r\nPING 789\r\n".to_vec();
 
-        let mut reader = IrcReader { reader: BufReader::new(Cursor::new(input)) };
+        let reader = IrcReader { reader: BufReader::new(Cursor::new(input)) };
 
         let mut messages = 0;
 
