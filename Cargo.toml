@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["Calum Leslie <calumleslie@gmail.com>"]
 
 [dependencies]
-nom = "~1.1.0"
+nom = "1.2.4"
 log = "0.3.6"
