@@ -9,13 +9,10 @@ use simplelog::TermLogger;
 use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
-use std::net::ToSocketAddrs;
 use std::env;
 use std::str::FromStr;
 use irc::IrcStream;
 use irc::Message;
-use irc::commands;
-use irc::Prefix;
 use openssl::ssl::SslConnectorBuilder;
 use openssl::ssl::SslMethod;
 
@@ -40,49 +37,35 @@ fn main() {
             let raw_connection = TcpStream::connect((server.as_str(), port)).unwrap();
             let connection = ssl_connector.connect(server.as_str(), raw_connection).unwrap();
             echobot(IrcStream::new(connection), nick, channel);
-        },
+        }
         "plain" => {
             info!("Connecting to {}:{} over plain IRC", server, port);
             let connection = TcpStream::connect((server.as_str(), port)).unwrap();
             echobot(IrcStream::new(connection), nick, channel);
-        },
-        _ => panic!("Unrecognised protocol: {}", protocol)
+        }
+        _ => panic!("Unrecognised protocol: {}", protocol),
     }
 }
 
 fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick: &str, channel: &str) {
-    info!("Connecting with nick {} and joining channel {}", nick, channel);
+    info!("Connecting with nick {} and joining channel {}",
+          nick,
+          channel);
 
-    irc.send(&Message::from_strs(Prefix::None, commands::NICK(), vec![nick])).unwrap();
-    irc.send(&Message::from_strs(Prefix::None,
-                                  commands::USER(),
-                                  vec![nick, "0", "*", "This is pretty sweet assuming it works"]))
-        .unwrap();
-
-    irc.send(&Message::from_strs(Prefix::None, commands::JOIN(), vec![channel.into()]))
-        .unwrap();
+    irc.send(&Message::nick(nick)).unwrap();
+    irc.send(&Message::user(nick, "Echo Bot")).unwrap();
+    irc.send(&Message::join(channel)).unwrap();
 
     loop {
         let message = irc.next_message().unwrap();
-        if message.command == commands::PING() {
+        if let Some(ping) = message.as_ping() {
             info!("Responding to a PING message");
-            irc.send(&Message::new(Prefix::None, commands::PONG(), message.arguments)).unwrap();
-        } else if message.command == commands::PRIVMSG() {
-            if message.arguments.len() != 2 {
-                continue;
-            }
-
-            let sender = message.arguments.get(0).unwrap().as_str();
-            let line = message.arguments.get(1).unwrap().as_str();
-
-            if line.starts_with("!echo ") {
+            irc.send(&ping.pong()).unwrap();
+        } else if let Some(privmsg) = message.as_privmsg() {
+            if privmsg.text.starts_with("!echo ") {
                 info!("Responding to an !echo request");
-                irc.send(&Message::from_strs(Prefix::None,
-                                              commands::PRIVMSG(),
-                                              vec![sender, &line[5..]]))
-                    .unwrap();
+                irc.send(&Message::privmsg(privmsg.to, &privmsg.text[5..])).unwrap()
             }
-
         }
     }
 }

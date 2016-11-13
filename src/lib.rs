@@ -13,6 +13,7 @@ mod irc_stream;
 mod message;
 mod parser;
 
+pub mod messages;
 pub use command::Command;
 pub use command::responses;
 pub use command::commands;
