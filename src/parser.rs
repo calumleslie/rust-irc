@@ -3,6 +3,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::fmt::Display;
 use std::fmt::Formatter;
+use std::string::String;
 use std::str;
 use std::str::FromStr;
 use std::str::Utf8Error;
@@ -66,9 +67,9 @@ named!(message<Message>, chain!(
 )) ;
 
 named!(params<Vec<String> >, many0!( preceded!( tag!(" "), alt!( final_param | param ) ) ) );
-named!(param<String>, map_res!( take_while1!(not_space), copy_to_string ) );
+named!(param<String>, map!( take_while1!(not_space), copy_to_string ) );
 named!(final_param<String>, preceded!( tag!(":"), trailing ) );
-named!(trailing<String>, map_res!( take_while!(trailing_char), copy_to_string ) );
+named!(trailing<String>, map!( take_while!(trailing_char), copy_to_string ) );
 
 named!(command<Command>, alt!( word_command | numeric_command ) );
 named!(word_command<Command>, map_res!( take_while1!(is_alphabetic), make_word) );
@@ -98,8 +99,8 @@ named!(nickname<&str>, map_res!( take_while1!(is_nickname_char), str::from_utf8)
 named!(username<&str>, map_res!( take_while1!(is_username_char), str::from_utf8));
 named!(host<&str>, map_res!( take_while1!(is_host_char), str::from_utf8));
 
-fn copy_to_string(input: &[u8]) -> Result<String, Utf8Error> {
-    str::from_utf8(input).map(|borrowed| borrowed.to_string())
+fn copy_to_string(input: &[u8]) -> String {
+    String::from_utf8_lossy(input).into_owned()
 }
 
 fn to_cow_str<'a>(input: &'a [u8]) -> Result<Cow<'a, str>, Utf8Error> {
@@ -230,6 +231,19 @@ fn message_no_prefix() {
                        Message::from_strs(Prefix::None,
                                           commands::PRIVMSG(),
                                           vec!["someone", "Hey what is up"]))
+        }
+        other => panic!("{:?}", other),
+    }
+}
+
+#[test]
+fn message_invalid_utf8() {
+    match message(b"PRIVMSG someone :Hey there \xc3\r\n") {
+        IResult::Done(_, out) => {
+            assert_eq!(out,
+                       Message::from_strs(Prefix::None,
+                                          commands::PRIVMSG(),
+                                          vec!["someone", "Hey there \u{fffd}"]))
         }
         other => panic!("{:?}", other),
     }
