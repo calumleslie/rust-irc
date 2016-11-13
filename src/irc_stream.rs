@@ -10,7 +10,7 @@ use std::io::Write;
 
 use message::Message;
 
-/// A type representing an IRC connection, equivalent to TcpStream for TCP connections.
+/// A type representing an IRC connection, equivalent to `TcpStream` for TCP connections.
 #[derive(Debug)]
 pub struct IrcStream {
     tcp_stream: TcpStream,
@@ -18,7 +18,7 @@ pub struct IrcStream {
 
 /// A reader of IRC messages.
 ///
-/// Generally R should implement BufRead. Because this type implments `Iterator` the messages in
+/// Generally R should implement `BufRead`. Because this type implments `Iterator` the messages in
 /// the stream can be iterated, however errors will be skipped, and the iteration will stop on the
 /// first error (which may not be fatal).
 #[derive(Debug)]
@@ -37,18 +37,18 @@ impl IrcStream {
         Ok(IrcStream { tcp_stream: try!(TcpStream::connect(server)) })
     }
 
-    /// Create a new IrcStream wrapping a provided TcpStream.
+    /// Create a new `IrcStream` wrapping a provided `TcpStream`.
     pub fn new(tcp_stream: TcpStream) -> Self {
         IrcStream { tcp_stream: tcp_stream }
     }
 
-    /// Try to clone the IrcStream. Semantics w.r.t. closing and so on are the same as the
-    /// TcpStream type being wrapped.
+    /// Try to clone the `IrcStream`. Semantics w.r.t. closing and so on are the same as the
+    /// `TcpStream` type being wrapped.
     pub fn try_clone(&self) -> io::Result<Self> {
         self.tcp_stream.try_clone().map(|cloned_stream| IrcStream { tcp_stream: cloned_stream })
     }
 
-    /// Clone the stream and wrap it in an IrcReader. Because the IrcReader has buffering it's
+    /// Clone the stream and wrap it in an `IrcReader`. Because the `IrcReader` has buffering it's
     /// recommended not to have more than one reader for each stream.
     pub fn reader(&self) -> io::Result<IrcReader<BufReader<TcpStream>>> {
         let read_stream = try!(self.tcp_stream.try_clone());
@@ -63,7 +63,8 @@ impl IrcStream {
     }
 }
 
-impl<R> IrcReader<R> where R: BufRead
+impl<R> IrcReader<R>
+    where R: BufRead
 {
     /// Read the next message from this reader.
     pub fn next_message(&mut self) -> io::Result<Message> {
@@ -82,7 +83,8 @@ impl<R> IrcReader<R> where R: BufRead
     }
 }
 
-impl<R> Iterator for IrcReader<R> where R: BufRead
+impl<R> Iterator for IrcReader<R>
+    where R: BufRead
 {
     type Item = Message;
 

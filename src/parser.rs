@@ -52,8 +52,8 @@ impl Display for ParseError {
 
 pub fn parse_message(input: &[u8]) -> Result<(Message, &[u8]), ParseError> {
     match message(input) {
-        IResult::Done(remaining, message) => return Ok((message, remaining)),
-        _ => return Err(ParseError { input: input.to_vec() }),
+        IResult::Done(remaining, message) => Ok((message, remaining)),
+        _ => Err(ParseError { input: input.to_vec() }),
     }
 }
 
@@ -103,7 +103,7 @@ fn copy_to_string(input: &[u8]) -> String {
     String::from_utf8_lossy(input).into_owned()
 }
 
-fn to_cow_str<'a>(input: &'a [u8]) -> Result<Cow<'a, str>, Utf8Error> {
+fn to_cow_str(input: &[u8]) -> Result<Cow<str>, Utf8Error> {
     str::from_utf8(input).map(|string| string.into())
 }
 
@@ -130,12 +130,12 @@ fn trailing_char(c: u8) -> bool {
     (c == b' ') || not_space(c)
 }
 
-fn make_word<'a>(input: &'a [u8]) -> Result<Command, str::Utf8Error> {
+fn make_word(input: &[u8]) -> Result<Command, str::Utf8Error> {
     str::from_utf8(input).map(|w| Command::of_word(w))
 }
 
-fn make_number<'a>(input: &'a [u8]) -> Result<Command, str::Utf8Error> {
-    to_cow_str(input).map(|text| u16::from_str(&*text).unwrap_or(123)).map(|n| Command::Number(n))
+fn make_number(input: &[u8]) -> Result<Command, str::Utf8Error> {
+    to_cow_str(input).map(|text| u16::from_str(&*text).unwrap_or(123)).map(Command::Number)
 }
 
 fn is_nickname_char(c: u8) -> bool {
@@ -312,7 +312,7 @@ fn real_message_complex() {
                    CHANMODES=eIbq,k,flj,CFLMPQScgimnprstz CHANLIMIT=#:120 PREFIX=(ov)@+ \
                    MAXLIST=bqeI:100 MODES=4 NETWORK=freenode KNOCK STATUSMSG=@+ CALLERID=g :are \
                    supported by this server\r\n"
-                      .as_bytes()) {
+        .as_bytes()) {
         IResult::Done(_, out) => {
             assert_eq!(out,
                        Message::from_strs(Prefix::Server("leguin.freenode.net".into()),

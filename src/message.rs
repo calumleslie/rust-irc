@@ -70,14 +70,14 @@ impl UserInfo {
     }
 
     /// Convenience method to get a Prefix::User instance from this UserInfo.
-    pub fn to_prefix<'a>(self) -> Prefix {
+    pub fn into_prefix(self) -> Prefix {
         Prefix::User(self)
     }
 
     pub fn nickname(&self) -> &str {
         match *self {
-            UserInfo::Nick(ref nick) => nick,
-            UserInfo::NickHost(ref nick, _) => nick,
+            UserInfo::Nick(ref nick) |
+            UserInfo::NickHost(ref nick, _) |
             UserInfo::NickUserHost(ref nick, _, _) => nick,
         }
     }
@@ -85,14 +85,15 @@ impl UserInfo {
     pub fn host(&self) -> Option<&str> {
         match *self {
             UserInfo::Nick(_) => None,
-            UserInfo::NickHost(_, ref host) => Some(host),
+            UserInfo::NickHost(_, ref host) |
             UserInfo::NickUserHost(_, _, ref host) => Some(host),
+
         }
     }
 
     pub fn username(&self) -> Option<&str> {
         match *self {
-            UserInfo::Nick(_) => None,
+            UserInfo::Nick(_) |
             UserInfo::NickHost(_, _) => None,
             UserInfo::NickUserHost(_, ref user, _) => Some(user),
         }
@@ -169,7 +170,7 @@ mod tests {
 
     #[test]
     fn user_prefix_nickname_only() {
-        let line = Message::from_strs(UserInfo::of_nickname("nickname".into()).to_prefix(),
+        let line = Message::from_strs(UserInfo::of_nickname("nickname".into()).into_prefix(),
                                       PING(),
                                       vec![]);
 
@@ -179,7 +180,7 @@ mod tests {
     #[test]
     fn user_prefix_nickname_host() {
         let user_info = UserInfo::of_nickname_host("nickname".into(), "some.host.name".into());
-        let line = Message::new(user_info.to_prefix(), PING(), vec![]);
+        let line = Message::new(user_info.into_prefix(), PING(), vec![]);
 
         assert_eq!(format!("{}", line), ":nickname@some.host.name PING");
     }
@@ -189,7 +190,7 @@ mod tests {
         let user_info = UserInfo::of_nickname_user_host("nickname".into(),
                                                         "realname".into(),
                                                         "some.host.name".into());
-        let line = Message::new(user_info.to_prefix(), PING(), vec![]);
+        let line = Message::new(user_info.into_prefix(), PING(), vec![]);
 
         assert_eq!(format!("{}", line),
                    ":nickname!realname@some.host.name PING");
