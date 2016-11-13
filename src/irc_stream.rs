@@ -34,7 +34,7 @@ impl IrcStream {
     pub fn connect<A: ToSocketAddrs + Display>(server: A) -> io::Result<Self> {
         info!("Connecting to server at {}", server);
 
-        Ok(IrcStream { tcp_stream: try!(TcpStream::connect(server)) })
+        Ok(IrcStream { tcp_stream: TcpStream::connect(server)? })
     }
 
     /// Create a new `IrcStream` wrapping a provided `TcpStream`.
@@ -51,14 +51,14 @@ impl IrcStream {
     /// Clone the stream and wrap it in an `IrcReader`. Because the `IrcReader` has buffering it's
     /// recommended not to have more than one reader for each stream.
     pub fn reader(&self) -> io::Result<IrcReader<BufReader<TcpStream>>> {
-        let read_stream = try!(self.tcp_stream.try_clone());
+        let read_stream = self.tcp_stream.try_clone()?;
         Ok(IrcReader { reader: BufReader::new(read_stream) })
     }
 
     /// Sends a message to the target of the stream.
     pub fn send(&mut self, message: &Message) -> io::Result<()> {
         debug!("SEND> {}", message);
-        try!(write!(self.tcp_stream, "{}\r\n", message));
+        write!(self.tcp_stream, "{}\r\n", message)?;
         self.tcp_stream.flush()
     }
 }
@@ -71,7 +71,7 @@ impl<R> IrcReader<R>
         // TODO: Is the buffer being in here really good? Moving it out leads to all manner of
         // annoying borrow errors.
         let mut buf = Vec::new();
-        try!(self.reader.read_until(b'\n', &mut buf));
+        self.reader.read_until(b'\n', &mut buf)?;
         match Message::parse(&buf[..]) {
             Ok((msg, remaining)) => {
                 assert!(remaining.len() == 0);

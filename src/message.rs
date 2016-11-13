@@ -117,22 +117,22 @@ impl Display for UserInfo {
 // Should we be using a Write or soemthing instead?
 impl Display for Message {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
-        try!(match self.prefix {
+        match self.prefix {
             Prefix::None => Ok(()),
             Prefix::Server(ref server) => write!(fmt, ":{} ", server),
             Prefix::User(ref user_info) => write!(fmt, ":{} ", user_info),
-        });
+        }?;
 
-        try!(write!(fmt, "{}", self.command));
+        write!(fmt, "{}", self.command)?;
 
         for (i, argument) in self.arguments.iter().enumerate() {
-            try!(write!(fmt, " "));
+            write!(fmt, " ")?;
 
             if i == self.arguments.len() - 1 && argument.contains(' ') {
-                try!(write!(fmt, ":"));
+                write!(fmt, ":")?;
             }
 
-            try!(write!(fmt, "{}", argument));
+            write!(fmt, "{}", argument)?;
         }
 
         Ok(())
