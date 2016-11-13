@@ -20,7 +20,6 @@ pub use message::Message;
 pub use message::Prefix;
 pub use message::UserInfo;
 pub use irc_stream::IrcStream;
-pub use irc_stream::IrcReader;
 pub use parser::ParseError;
 
 use parser::parse_message;
