@@ -56,6 +56,12 @@ impl Message {
     }
 }
 
+impl From<UserInfo> for Prefix {
+    fn from(info: UserInfo) -> Self {
+        Prefix::User(info)
+    }
+}
+
 impl UserInfo {
     pub fn of_nickname(nickname: &str) -> Self {
         UserInfo::Nick(nickname.into())
@@ -67,11 +73,6 @@ impl UserInfo {
 
     pub fn of_nickname_user_host(nickname: &str, user: &str, host: &str) -> Self {
         UserInfo::NickUserHost(nickname.into(), user.into(), host.into())
-    }
-
-    /// Convenience method to get a Prefix::User instance from this UserInfo.
-    pub fn into_prefix(self) -> Prefix {
-        Prefix::User(self)
     }
 
     pub fn nickname(&self) -> &str {
@@ -170,7 +171,7 @@ mod tests {
 
     #[test]
     fn user_prefix_nickname_only() {
-        let line = Message::from_strs(UserInfo::of_nickname("nickname".into()).into_prefix(),
+        let line = Message::from_strs(UserInfo::of_nickname("nickname".into()).into(),
                                       PING(),
                                       vec![]);
 
@@ -180,7 +181,7 @@ mod tests {
     #[test]
     fn user_prefix_nickname_host() {
         let user_info = UserInfo::of_nickname_host("nickname".into(), "some.host.name".into());
-        let line = Message::new(user_info.into_prefix(), PING(), vec![]);
+        let line = Message::new(user_info.into(), PING(), vec![]);
 
         assert_eq!(format!("{}", line), ":nickname@some.host.name PING");
     }
@@ -190,7 +191,7 @@ mod tests {
         let user_info = UserInfo::of_nickname_user_host("nickname".into(),
                                                         "realname".into(),
                                                         "some.host.name".into());
-        let line = Message::new(user_info.into_prefix(), PING(), vec![]);
+        let line = Message::new(user_info.into(), PING(), vec![]);
 
         assert_eq!(format!("{}", line),
                    ":nickname!realname@some.host.name PING");
