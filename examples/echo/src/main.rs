@@ -6,6 +6,7 @@ extern crate openssl;
 
 use simplelog::LogLevelFilter;
 use simplelog::TermLogger;
+use std::io;
 use std::io::Read;
 use std::io::Write;
 use std::net::TcpStream;
@@ -36,35 +37,35 @@ fn main() {
             let ssl_connector = SslConnectorBuilder::new(SslMethod::tls()).unwrap().build();
             let raw_connection = TcpStream::connect((server.as_str(), port)).unwrap();
             let connection = ssl_connector.connect(server.as_str(), raw_connection).unwrap();
-            echobot(IrcStream::new(connection), nick, channel);
+            echobot(IrcStream::new(connection), nick, channel).unwrap();
         }
         "plain" => {
             info!("Connecting to {}:{} over plain IRC", server, port);
             let connection = TcpStream::connect((server.as_str(), port)).unwrap();
-            echobot(IrcStream::new(connection), nick, channel);
+            echobot(IrcStream::new(connection), nick, channel).unwrap();
         }
         _ => panic!("Unrecognised protocol: {}", protocol),
     }
 }
 
-fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick: &str, channel: &str) {
+fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick: &str, channel: &str) -> io::Result<()> {
     info!("Connecting with nick {} and joining channel {}",
           nick,
           channel);
 
-    irc.send(&Message::nick(nick)).unwrap();
-    irc.send(&Message::user(nick, "Echo Bot")).unwrap();
-    irc.send(&Message::join(channel)).unwrap();
+    irc.send(&Message::nick(nick))?;
+    irc.send(&Message::user(nick, "Echo Bot"))?;
+    irc.send(&Message::join(channel))?;
 
     loop {
-        let message = irc.next_message().unwrap();
+        let message = irc.next_message()?;
         if let Some(ping) = message.as_ping() {
             info!("Responding to a PING message");
             irc.send(&ping.pong()).unwrap();
         } else if let Some(privmsg) = message.as_privmsg() {
             if privmsg.text.starts_with("!echo ") {
                 info!("Responding to an !echo request");
-                irc.send(&Message::privmsg(privmsg.to, &privmsg.text[5..])).unwrap()
+                irc.send(&Message::privmsg(privmsg.to, &privmsg.text[5..]))?
             }
         }
     }
