@@ -1,3 +1,10 @@
+//! Experimental library for working with the IRC protocol.
+//!
+//! _Very_ work-in-progress so if you do decide to use this, please expect breakages. In particular
+//! I suspect that the IRC message parsing is not complete.
+//!
+//! See `examples/echo` for a simple bot which sits on a channel and responds to `!echo` commands.
+
 // I'd happily have Clippy on all the time but it's nightly-only so it's hidden behind a feature
 // flag.
 #![cfg_attr(feature="clippy", feature(plugin))]
