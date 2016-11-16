@@ -12,6 +12,7 @@ use std::env;
 use std::str::FromStr;
 use irc::IrcStream;
 use irc::Message;
+use irc::responses;
 
 fn main() {
     TermLogger::init(LogLevelFilter::Trace).unwrap();
@@ -40,13 +41,15 @@ fn main() {
     }
 }
 
-fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick: &str, channel: &str) -> io::Result<()> {
+fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick_str: &str, channel: &str) -> io::Result<()> {
+    let mut nick = nick_str.to_string();
+
     info!("Connecting with nick {} and joining channel {}",
-          nick,
+          nick.as_str(),
           channel);
 
-    irc.send(&Message::nick(nick))?;
-    irc.send(&Message::user(nick, "Echo Bot"))?;
+    irc.send(&Message::nick(nick.as_str()))?;
+    irc.send(&Message::user("echobot", "Echo Bot"))?;
     irc.send(&Message::join(channel))?;
 
     loop {
@@ -59,6 +62,10 @@ fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick: &str, channel: &str) ->
                 info!("Responding to an !echo request");
                 irc.send(&Message::privmsg(privmsg.to, &privmsg.text[6..]))?
             }
+        } else if message.command == responses::ERR_NICKNAMEINUSE() {
+            info!("Nick {} in use, trying {}_", nick, nick);
+            nick.push('_');
+            irc.send(&Message::nick(nick.as_str()))?;
         }
     }
 }
