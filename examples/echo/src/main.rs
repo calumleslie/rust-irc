@@ -58,7 +58,7 @@ fn echobot<S: Read + Write>(mut irc: IrcStream<S>, nick: &str, channel: &str) ->
         } else if let Some(privmsg) = message.as_privmsg() {
             if privmsg.text.starts_with("!echo ") {
                 info!("Responding to an !echo request");
-                irc.send(&Message::privmsg(privmsg.to, &privmsg.text[5..]))?
+                irc.send(&Message::privmsg(privmsg.to, &privmsg.text[6..]))?
             }
         }
     }
