@@ -112,7 +112,7 @@ fn to_cow_str(input: &[u8]) -> Result<Cow<str>, Utf8Error> {
 // definition of "hostname".
 // TODO: What about internationalized hostnames?
 fn is_host_char(c: u8) -> bool {
-    is_alphabetic(c) || is_digit(c) || c == b'.' || c == b':'
+    is_alphabetic(c) || is_digit(c) || c == b'.' || c == b':' || c == b'-'
 }
 
 // Everything except NUL, CR, LF, and " "
@@ -149,8 +149,8 @@ fn is_username_char(c: u8) -> bool {
 
 #[test]
 fn host_hostname() {
-    match host("hello.world.com".as_bytes()) {
-        IResult::Done(_, out) => assert_eq!(out, "hello.world.com"),
+    match host("hello-world.com".as_bytes()) {
+        IResult::Done(_, out) => assert_eq!(out, "hello-world.com"),
         other => panic!("{:?}", other),
     }
 }
