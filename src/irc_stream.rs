@@ -19,6 +19,12 @@ pub struct IrcStream<S: Read + Write> {
 }
 
 impl IrcStream<SslStream<TcpStream>> {
+    /// Connect to a server over SSL and wrap in an `IrcStream`.
+    ///
+    /// Note that the connection here uses default configuration for everything. If you need to
+    /// configure SSL or TCP connections at all consider using `IrcStream::new`. In particular the
+    /// TCP connection will have an unlimited read timeout, which won't be appropriate for all
+    /// cases.
     pub fn connect_ssl(server: &str, port: u16) -> io::Result<Self> {
         debug!("Connecting to ircs://{}:{}", server, port);
         let ssl_connector = SslConnectorBuilder::new(SslMethod::tls())?.build();
@@ -30,6 +36,11 @@ impl IrcStream<SslStream<TcpStream>> {
 }
 
 impl IrcStream<TcpStream> {
+    /// Connect to a server and wrap in an `IrcStream`.
+    ///
+    /// Note that the connection here uses default configuration for everything. If you need to
+    /// configure your connection at all, consider using `IrcStream::new`. In particular the TCP
+    /// connection will have an unlimited read timeout, which won't be appropriate for all cases.
     pub fn connect(server: &str, port: u16) -> io::Result<Self> {
         debug!("Connecting to irc://{}:{}", server, port);
         let connection = TcpStream::connect((server, port))?;
@@ -38,7 +49,7 @@ impl IrcStream<TcpStream> {
 }
 
 impl<S: Read + Write> IrcStream<S> {
-    /// Create a new `IrcStream` wrapping a provided `TcpStream`.
+    /// Create a new `IrcStream` wrapping a provided stream.
     pub fn new(stream: S) -> Self {
         IrcStream { reader: BufReader::new(stream) }
     }
