@@ -8,7 +8,6 @@ use simplelog::TermLogger;
 use std::io;
 use std::io::Read;
 use std::io::Write;
-use std::net::TcpStream;
 use std::env;
 use std::str::FromStr;
 use irc::IrcStream;
