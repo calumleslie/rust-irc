@@ -1,6 +1,7 @@
+// I'd happily have Clippy on all the time but it's nightly-only so it's hidden behind a feature
+// flag.
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
-
 
 #[macro_use]
 extern crate log;
