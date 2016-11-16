@@ -2,7 +2,6 @@ extern crate irc;
 #[macro_use]
 extern crate log;
 extern crate simplelog;
-extern crate openssl;
 
 use simplelog::LogLevelFilter;
 use simplelog::TermLogger;
@@ -14,8 +13,6 @@ use std::env;
 use std::str::FromStr;
 use irc::IrcStream;
 use irc::Message;
-use openssl::ssl::SslConnectorBuilder;
-use openssl::ssl::SslMethod;
 
 fn main() {
     TermLogger::init(LogLevelFilter::Trace).unwrap();
@@ -33,16 +30,12 @@ fn main() {
 
     match protocol.as_str() {
         "ssl" => {
-            info!("Connecting to {}:{} over SSL", server, port);
-            let ssl_connector = SslConnectorBuilder::new(SslMethod::tls()).unwrap().build();
-            let raw_connection = TcpStream::connect((server.as_str(), port)).unwrap();
-            let connection = ssl_connector.connect(server.as_str(), raw_connection).unwrap();
-            echobot(IrcStream::new(connection), nick, channel).unwrap();
+            let irc = IrcStream::connect_ssl(server.as_str(), port).unwrap();
+            echobot(irc, nick, channel).unwrap();
         }
         "plain" => {
-            info!("Connecting to {}:{} over plain IRC", server, port);
-            let connection = TcpStream::connect((server.as_str(), port)).unwrap();
-            echobot(IrcStream::new(connection), nick, channel).unwrap();
+            let irc = IrcStream::connect(server.as_str(), port).unwrap();
+            echobot(irc, nick, channel).unwrap();
         }
         _ => panic!("Unrecognised protocol: {}", protocol),
     }

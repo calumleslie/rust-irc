@@ -2,16 +2,39 @@ use std::io;
 use std::io::Read;
 use std::io::BufRead;
 use std::io::BufReader;
-use std::io::Error;
 use std::io::ErrorKind;
 use std::io::Write;
+use std::net::TcpStream;
 
 use message::Message;
+
+use openssl::ssl::SslConnectorBuilder;
+use openssl::ssl::SslMethod;
+use openssl::ssl::SslStream;
 
 /// A type representing an IRC connection, equivalent to `TcpStream` for TCP connections.
 #[derive(Debug)]
 pub struct IrcStream<S: Read + Write> {
     reader: BufReader<S>,
+}
+
+impl IrcStream<SslStream<TcpStream>> {
+    pub fn connect_ssl(server: &str, port: u16) -> io::Result<Self> {
+        debug!("Connecting to ircs://{}:{}", server, port);
+        let ssl_connector = SslConnectorBuilder::new(SslMethod::tls())?.build();
+        let raw_connection = TcpStream::connect((server, port))?;
+        let connection = ssl_connector.connect(server, raw_connection)
+            .map_err(|ssl_err| io::Error::new(ErrorKind::Other, ssl_err))?;
+        Ok(IrcStream::new(connection))
+    }
+}
+
+impl IrcStream<TcpStream> {
+    pub fn connect(server: &str, port: u16) -> io::Result<Self> {
+        debug!("Connecting to irc://{}:{}", server, port);
+        let connection = TcpStream::connect((server, port))?;
+        Ok(IrcStream::new(connection))
+    }
 }
 
 impl<S: Read + Write> IrcStream<S> {
@@ -39,7 +62,7 @@ impl<S: Read + Write> IrcStream<S> {
                 debug!("RECV> {}", msg);
                 Ok(msg)
             }
-            Err(parse_error) => Err(Error::new(ErrorKind::InvalidData, parse_error)),
+            Err(parse_error) => Err(io::Error::new(ErrorKind::InvalidData, parse_error)),
         }
     }
 

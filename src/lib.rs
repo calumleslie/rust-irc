@@ -8,6 +8,8 @@ extern crate log;
 #[macro_use]
 extern crate nom;
 
+extern crate openssl;
+
 mod command;
 mod irc_stream;
 mod message;
