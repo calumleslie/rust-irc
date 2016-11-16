@@ -19,7 +19,7 @@ impl Message {
 }
 
 impl<'a> Ping<'a> {
-    /// Creates the PING message corresponding to this PONG message.
+    /// Creates the PONG message corresponding to this PING message.
     pub fn pong(&self) -> Message {
         let arg_copy: Vec<&str> = self.arguments.iter().map(|s| s.as_str()).collect();
         Message::from_strs(Prefix::None, commands::PONG(), arg_copy)
